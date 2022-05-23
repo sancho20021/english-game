@@ -1,5 +1,8 @@
-interface Player {
-    fun makePrediction(): Pair<Int, Int>
-
-    var hp: Int
+interface Player : CombatUnit {
+    /**
+     * I didn't come up with better idea, so almost everything is event now(death, victory, transfer to another location, enemy encounter).
+     * You can add more Events if you like.
+     * @see Event
+     */
+    fun event(event: Event)
 }

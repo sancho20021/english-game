@@ -1,19 +1,64 @@
-class UserPlayer(override var hp: Int) : Player {
-    override fun makePrediction(): Pair<Int, Int> {
-        println("Make your prediction (type two numbers separated with space)")
-        val (a, b) = readLine()!!.split("""\s+""".toRegex()).map(String::toInt)
+object UserPlayer : Player {
+
+    // This text images can be useful
+    private val BILLY =
+    """
+    ⠄⠄⠄⠄⠄⢀⣀⣀⣤⡶⢖⡻⢟⣻⠿⠢⠄⣀
+    ⠄⠄⣀⢔⡾⣫⢿⢋⠈⠄⡜⡩⠄⠄⠤⠤⠤⠤⠽⣆
+    ⢀⣰⢉⢸⡀⢇⡜⢎⣤⣷⣧⣧⣮⣤⡄⠒⠒⠚⠿⠿⣧
+    ⢸⣰⢕⣵⣷⣼⠄⣾⣿⠟⠛⠉⠛⠛⠛⠿⢶⣄⣀⡀⠘⡄
+    ⢏⠡⢸⣿⢿⣿⠟⠑⠁⠄⡤⡇⠄⠄⠄⠄⠄⠘⢷⠻⣷⡇
+    ⢸⢡⡿⠁⡩⠋⠄⠄⠄⠄⡿⠄⠄⠄⠄⠄⠄⠄⠘⣇⢨⢳
+    ⠸⡾⡅⠄⠄⠄⠄⠄⠄⡀⠃⣠⣴⡶⠶⠶⠦⠄⠄⢻⣴⣷
+    ⠄⢱⣷⡀⠄⢀⣤⣶⡾⡀⠄⣉⣰⣶⠖⠛⠗⠒⠄⠈⢿⣿⣿⡆
+    ⠄⠄⢻⣇⠠⢟⣭⠦⢴⠚⡄⠨⡇⠬⠟⠖⠄⠄⠄⠄⠄⢿⢾⣸
+    ⠄⠄⠈⠿⡄⠈⠁⠐⠈⠰⠄⠄⠿⠄⢆⠄⠄⠄⠄⠄⠄⢤⢓⡏
+    ⠄⠄⠈⡿⣧⡀⠄⠄⠄⠳⢣⣀⡼⠂⠄⠄⢈⣱⠄⠄⠄⢸⠉
+    ⠄⠄⠄⢂⠻⣇⠄⠄⠄⠁⠄⢀⡳⢔⡳⢞⡏⢸⠄⠄⠄⢸
+    ⠄⠄⠄⠄⠑⠚⡆⠰⠄⠐⠾⠍⠠⢑⣀⠕⠄⠘⠄⠄⢀⣾
+    ⠄⠄⠄⠄⠄⠄⢸⡀⠈⠄⠄⠈⠉⠉⠔⠁⠄⠘⢀⣼⡿⡿⡄
+    ⠄⠄⠄⠄⠄⠄⠄⢻⠪⢌⡀⠄⠄⠄⠄⠄⠄⢰⠞⠋⠙⠄⢣⡀
+    ⠄⠄⠄⠄⠄⠄⠄⠘⡄⠄⠙⠢⢅⡠⡤⢤⠒⠁⠄⠄⠄⠁⠈⠻
+    ⠄⠄⠄⠄⠄⠄⠄⣠⣧⠄⠄⠄⢀⠄⠄⣡⠄⠄⠄⠄⠄⠄⠄⠄
+    ⠄⠄⠄⠄⣠⡴⠎⠻⣟⡀⠄⠄⠸⢄⣬⣿⠄⠄⠄⠄⠠⠒⡢⠢
+    ⠄⢀⡠⠊⠈⠄⠄⠄⠈⢻⣀⠄⢂⠈⠫⢟⠄⠄⠄⠄⠄⠉⠊⠄
+    ⠉⠉⡠⠖⠚⠛⠒⠤⠄⣈⠎⠄⠄⠣⣀⡈⠄⣀⣀⣀⣠⣀⣀⣀
+    ⠄⠄⠄⠄⠠⠐⠚⠑⠄⠄⠄⡀⠄⠄⣠⣶⡿⠉⠄⠄⠄⠄⠄⠄
+    """.trimIndent() +
+        "\n            Billy          "
+
+    val MR_INCREDIBLE = """
+    ⠀⠀⠀⠀⠀⡰⢂⣾⠿⠛⠒⠚⠛⠃⠺⢶⡀⠀⠀⠀⠀⠀⠀⠀⠀
+    ⠀⠀⠀⠀⢠⡣⠋⠁⠀⠀⠀⠀⠀⢀⡐⠒⢙⣄⠀⠀⠀⠀⠀⠀⠀
+    ⠀⠀⠀⠀⡘⠀⠀⠀⠀⠀⠀⢄⠉⠀⠐⠀⠀⠙⢦⠀⠀⠀⠀⠀⠀
+    ⠀⠀⠀⣾⠁⠀⠀⠄⠂⢈⣠⠎⠀⠀⣸⣿⡿⠓⢬⡇⠀⠀⠀⠀⠀
+    ⠀⠀⢸⡟⠀⠔⣁⣤⣶⣿⠋⢰⠀⠀⣿⡟⠻⣦⠀⢳⠀⠀⠀⠀⠀
+    ⠀⠀⣷⡇⢠⣾⢟⢭⣭⡭⡄⠀⡆⠀⣿⣷⣶⠺⡆⢸⡄⠀⠀⠀⠀
+    ⠀⠀⠇⡇⠛⠡⣑⣈⣛⠝⢁⡀⠇⠀⣿⡿⠛⠒⣡⠇⣧⣀⠀⠀⠀
+    ⠀⠀⢠⠁⠈⠐⠤⠄⠀⣠⢸⠈⠢⠀⣿⡇⠀⠀⠠⠚⣿⣿⠀⠀⠀
+    ⡄⠀⢾⠀⡆⠠⣴⠞⠯⡀⠈⠙⠲⣶⣿⡇⠑⣦⡄⠀⣿⣿⠀⠀⠀
+    ⠈⠺⡮⠀⢡⠀⠀⠀⠀⠀⠁⠐⠒⠒⠛⠃⠈⠛⠇⠀⡏⡏⠀⠀⠀
+    ⠀⢰⠁⠀⠘⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡄⠀⢷⠀⠀⠀
+    ⠀⠘⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠃⠀⢸⠀⠀⠀
+    ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⡄⠀⠀
+    ⠀⠀⢣⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⠸⡳⡀⠀
+    ⠀⠀⠀⠑⢄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣯⣼⡇⠑⣄
+    """.trimIndent() +
+    "\n       Mr. Incredible"
+
+    override fun attack(my: UnitStatus, other: UnitStatus): Pair<Int, Int> {
+        val (a, b) = readLine()!!.split(" ").map { it.toInt() }
         return a to b
     }
 
-    fun gameOver(totalWins: Int) {
-        println("Game over!!! You loose. You won $totalWins fights")
+    // handling events example
+    override fun event(event: Event) {
+        when (event) {
+            is DamageDealt -> println("You've dealt ${event.amount} damage")
+            is DamageReceived -> println("You've received ${event.amount} damage")
+            Death -> println("You died")
+            Victory -> println("You won")
+        }
     }
 
-    fun win() {
-        println("You defeated the enemy!!!")
-    }
-
-    fun celebrate() {
-        println("Well done! You are the Dungeon master!!!")
-    }
 }
