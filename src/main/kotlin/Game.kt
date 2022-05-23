@@ -2,49 +2,83 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
 
-class Game {
+class Game(private val player: Player) {
+
     companion object {
-        val random = Random(1)
-        val enemies = listOf(SimpleEnemy(1), SimpleEnemy(2), SimpleEnemy(3))
+
+        private val random = Random(1)
+
+        private val enemies = listOf(
+            SimpleEnemy("enemy1"),
+            SimpleEnemy("enemy2"),
+            SimpleEnemy("enemy3"))
+
+        private fun score(expected: Int, min: Int, max: Int) =
+            if (expected in min..max) min.toDouble() / max else 0.0
+
+        private fun round(
+            unit: CombatUnit,
+            otherUnit: CombatUnit,
+            status: UnitStatus,
+            otherStatus: UnitStatus
+        ): Pair<UnitStatus, UnitStatus> {
+            val expected = random.nextInt(0, 4)
+            val (left, right) = unit.attack(status, otherStatus)
+            val (otherLeft, otherRight) = otherUnit.attack(status, otherStatus)
+            val score = score(expected, left, right)
+            val otherScore = score(expected, otherLeft, otherRight)
+
+            return if (score > otherScore)
+                status to otherStatus.copy(hp = otherStatus.hp - 1)
+            else
+                status.copy(hp = status.hp - 1) to otherStatus
+        }
     }
 
-    class SimpleEnemy(override var hp: Int) : Player {
-        override fun makePrediction(): Pair<Int, Int> {
+    private var playerStatus: UnitStatus
+
+    init {
+//        Hero choice affects this parameters in status
+        playerStatus = UnitStatus(name = "Player", hp = 3)
+    }
+
+    class SimpleEnemy(val name: String) : CombatUnit {
+        override fun attack(my: UnitStatus, other: UnitStatus): Pair<Int, Int> {
             val a = random.nextInt()
             val b = random.nextInt()
             return min(a, b) to max(a, b)
         }
     }
 
-    fun fight(player1: Player, player2: Player): Player {
-        val expected = random.nextInt(0, Int.MAX_VALUE)
-        while (min(player1.hp, player2.hp) > 0) {
-            val (pred1Min, pred1Max) = player1.makePrediction()
-            val (pred2Min, pred2Max) = player2.makePrediction()
-            val score1 = score(expected, pred1Min, pred1Max)
-            val score2 = score(expected, pred2Min, pred2Max)
-            if (score1 > score2) {
-                player2.hp -= 1
-            } else {
-                player1.hp -= 1
+    private fun fight(enemy: CombatUnit, initialEnemyStatus: UnitStatus) {
+        var enemyStatus = initialEnemyStatus
+        while (true) {
+            val (newStatus, newEnemyStatus) = round(player, enemy, playerStatus, enemyStatus)
+
+            if (newStatus.hp < playerStatus.hp) {
+                player.event(DamageReceived(playerStatus.hp - newStatus.hp))
+            }
+            if (newEnemyStatus.hp < enemyStatus.hp) {
+                player.event(DamageDealt(enemyStatus.hp - newEnemyStatus.hp))
+            }
+
+            playerStatus = newStatus
+            enemyStatus = newEnemyStatus
+
+            if (playerStatus.hp == 0) {
+                player.event(Death)
+                break
+            }
+            if (enemyStatus.hp == 0) {
+                player.event(Victory)
+                break
             }
         }
-        return if (player1.hp > 0) player1 else player2
     }
 
-    fun score(expected: Int, min: Int, max: Int) = if (expected in min..max) min.toDouble() / max else 0.0
-
     fun runGame() {
-        val user = UserPlayer(3)
-        for ((i, enemy) in enemies.withIndex()) {
-            val winner = fight(enemy, user)
-            if (winner == user) {
-                user.win()
-            } else {
-                user.gameOver(i)
-                return
-            }
+        for (enemy in enemies) {
+            fight(enemy, UnitStatus(enemy.name, 1))
         }
-        user.celebrate()
     }
 }
