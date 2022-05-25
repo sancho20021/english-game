@@ -5,4 +5,6 @@ interface Player : CombatUnit {
      * @see Event
      */
     fun event(event: Event)
+
+    fun selectItem(items: List<Item>): Item
 }
